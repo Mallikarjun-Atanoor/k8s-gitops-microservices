@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/Mallikarjun-Atanoor/tic-tac-toe-gitops-microservices-deployment.git
+    repoURL: https://github.com/Mallikarjun-Atanoor/k8s-gitops-microservices.git
     targetRevision: HEAD
-    path: apps
+    path: tic-tac-toe
   destination:
     server: https://kubernetes.default.svc
     namespace: tic-tac-toe
