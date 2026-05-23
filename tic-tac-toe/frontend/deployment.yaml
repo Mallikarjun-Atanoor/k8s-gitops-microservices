@@ -25,7 +25,7 @@ spec:
       containers:
       - name: frontend
 
-        image: 755395261632.dkr.ecr.us-east-1.amazonaws.com/platform/tic-tac-toe/front-end:v3
+        image: 755395261632.dkr.ecr.us-east-1.amazonaws.com/platform/tic-tac-toe/front-end:v4
 
         ports:
         - containerPort: 80
