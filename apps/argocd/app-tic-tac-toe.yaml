@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tic-tac-toe
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Mallikarjun-Atanoor/tic-tac-toe-gitops-microservices-deployment.git
+    targetRevision: HEAD
+    path: apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tic-tac-toe
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,34 @@
+{
+  "title": "TicTacToe App",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "CPU Usage",
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"tic-tac-toe\"}[1m]))"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Memory Usage",
+      "targets": [
+        {
+          "expr": "sum(container_memory_usage_bytes{namespace=\"tic-tac-toe\"})"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Pod Restarts",
+      "targets": [
+        {
+          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"tic-tac-toe\"})"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 16,
+  "version": 1
+}

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: tic-tac-toe
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: backend
+
+  template:
+    metadata:
+      labels:
+        app: backend
+
+    spec:
+
+      imagePullSecrets:
+      - name: ecr-secret
+
+      containers:
+      - name: backend
+
+        image: 755395261632.dkr.ecr.us-east-1.amazonaws.com/platform/tic-tac-toe/back-end:v3
+
+        ports:
+        - containerPort: 8000
+
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: DATABASE_URL
+
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+
+          limits:
+            cpu: 200m
+            memory: 256Mi

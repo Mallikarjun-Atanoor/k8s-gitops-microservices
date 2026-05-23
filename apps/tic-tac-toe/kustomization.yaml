@@ -1,0 +1,7 @@
+resources:
+  - backend
+  - frontend
+  - postgres
+  - namespace.yaml
+  - limitrange.yaml
+  - quota.yaml

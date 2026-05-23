@@ -1,0 +1,30 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Terraform variables
+*.tfvars
+*.tfvars.json
+
+# Terraform plan
+tfplan
+
+# Kubernetes secrets
+secrets.yaml
+secret.yaml
+
+# Helm
+charts/
+*.tgz
+
+# IDE
+.vscode/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+charts/

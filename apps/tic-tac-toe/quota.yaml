@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tic-tac-toe-quota
+  namespace: tic-tac-toe
+spec:
+  hard:
+    # total CPU/memory that all pods in this namespace can request/limit
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+
+    # guardrails
+    pods: "20"
+    services: "10"
+    persistentvolumeclaims: "5"
