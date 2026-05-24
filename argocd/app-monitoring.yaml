@@ -13,12 +13,17 @@ spec:
     namespace: monitoring
 
   source:
-    repoURL: https://github.com/Mallikarjun-Atanoor/k8s-gitops-microservices.git
-    targetRevision: main
-    path: monitoring
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 56.6.0
 
-    kustomize:
-      buildOptions: --enable-helm
+    helm:
+      values: |
+        grafana:
+          admin:
+            existingSecret: grafana-admin-secret
+            userKey: admin-user
+            passwordKey: admin-password
 
   syncPolicy:
     automated:
