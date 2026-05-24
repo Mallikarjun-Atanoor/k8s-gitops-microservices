@@ -17,6 +17,9 @@ spec:
     targetRevision: main
     path: monitoring
 
+    kustomize:
+      buildOptions: --enable-helm
+
   syncPolicy:
     automated:
       prune: true
