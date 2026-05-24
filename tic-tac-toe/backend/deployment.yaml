@@ -42,7 +42,7 @@ spec:
               name: db-secret
               key: username
 
-        - name: DB_PASSWORD
+        - name: DB_PASS
           valueFrom:
             secretKeyRef:
               name: db-secret
