@@ -1,0 +1,260 @@
+groups:
+
+  - name: k8s objects monitoring of tic-tac-toe application
+    rules:  
+     - alert: PodPendingStatus
+       expr: kube_pod_status_phase{phase="Pending"} == 1
+       for: 2m
+       labels:
+        severity: warning
+        team: finance
+       annotations:
+        summary: Pod {{$labels.namespace}}/{{$labels.pod}} struck in pending status
+        description: Pod {{$labels.namespace}}/{{$labels.pod}} struck in pending status
+
+
+  - name: DiskPressure monitoring
+    rules:
+     - alert: KubernetesNodeHasDiskPressure
+       expr: kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+       for: 15s
+       labels:
+        severity: critical
+        app: tic-tac-toe
+       annotations:
+        summary: "{{$labels.node}} has DiskPressure"
+        description: "{{$labels.node}} has reported DiskPressure for 15 seconds, please check and take necessary action"
+         
+
+  - name: MemoryPressure monitoring
+    rules:
+    - alert: KubernetesNodeHasMemoryPressure
+      expr: kube_node_status_condition{condition="MemoryPressure", status="true"} == 1
+      for: 15s
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{$labels.node}} has MemoryPressure"
+        description: "{{$labels.node}} has reported memeory pressure"
+
+  - name: Node status rule
+    rules:
+      - alert: NodeNotReady
+        expr: kube_node_status_condition{condition="ready",status="true"} == 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{$labels.node}} in NotReady status"
+          description: "{{$labels.node}} has reported NotReady status"
+
+  - name: crashloopbackoff monitoring
+    rules:
+      - alert: CrashLoopBackOff
+        expr: kube_pod_container_status_waiting_reason{namespace="kube-system",reason="CrashLoopBackOff"} == 1        
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{$labels.pod}} CrashLoopBackOff detected"
+          description: "{{$labels.pod}} CrashLoopBackOff detected"
+
+
+  - name: container restarts
+    rules:
+    - alert: ContainerRestarts
+      expr: increase(kube_pod_container_restart_count[5m]) > 0
+      labels:
+        severity: warning
+      annotations:
+        summary: "{{$labels.namespace}}/{{$labels.pod}} has increased rate of restarts"
+        description: "{{$labels.pod}}/{{$labels.pod}} has increased rate of restarts"
+
+  - name: replica monitoring
+    rules:
+    - alert: ReplicaCountNotMet
+      expr: kube_deployment_status_replicas_available{deployment="frontend", deployment="backend"} < kube_deployment_spec_replicas{replicaset="frontend-rs", replicaset="backend-rs"}
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{$labels.namespace}}/{{$labels.deployment}} doesn't meet required replicas"
+        description: "{{$labels.namespace}}/{{$labels.deployment}} doesn't meet required replicas"
+
+#####################################################################
+#####################################################################
+###Control plane component rules
+
+  - name: Kube apiserver uptime monitoring
+    rules: 
+    - alert: KubeApiServerUpMonitoring
+      expr: up{component="kube-apiserver"} == 1
+      for: 10s
+      labels:
+        severity: critical
+      annotations:
+        summary: "Kube API Pods Not available"
+        description: "{{$labels.namespace}}/{{$labels.pod}} not available"
+
+#Rule to monitor if api-server is returing 5xx
+  - name: kube-apiserver http status monitoring
+    rules:
+      - alert: KubeAPIServerHighHTTP5xxErrorRate
+        expr: sum(rate(apiserver_request_total{code=~"5.."}[5m]))/sum(rate(apiserver_request_total[5m]))>0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "api-server is returing 5xx"
+          description: "api-server is returing 5xx"
+
+  - name: kube-api server having high latency
+    rules: 
+      - alert: kubeApiserverHighLatency
+        expr: histogram_quantile(0.95, sum by(le)(rate (api_server_request_duration_seconds_bucket[5m])))>1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: kube-apiserver has high latency
+          description: kube-apiserver has high latency
+
+######################################################
+# etcd monitoring rules
+
+  - name: etcd scrape target down
+    rules:
+      - alert: EtcdScrapeTargetDown
+        expr: up{component="etcd"} == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{$labels.namespace}}/{{$labels.pod}} is down"
+          description: etcd server is down and can't be scraped and monitoring unavailable
+
+  - name: etcd has no leader
+    rules:
+      - alert: EtcdHasNoLeader
+        expr: etcd_server_has_leader == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{$labels.namespace}}/{{$labels.pod}} has no leader"
+          description: "{{$labels.namespace}}/{{$labels.pod}} down and has no leader for 30s action required"
+
+  - name: etcd database storage high
+    rules:
+     - alert: EtcdDatabaseStorageHigh
+       expr: (etcd_mvcc_db_total_size_in_bytes/etcd_server_backed_bytes) >= 0.80
+       labels:
+        severity: critical
+       annotations:
+        summary: "{{$labels.namespace}}/{{$labels.pod}} exceeding allocated storage"
+        description: "{{$labels.namespace}}/{{$labels.pod}} exceeding allocated storage"
+
+  - name: etcd has frequent leader changes
+    rules:
+      - alert: EtcdLeaderChangeFrequent
+        expr: rate(etcd_server_leader_changes_seen_total[15m])>3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "etcd server has frequent leader changes"
+          description: "etcd server has frequent leader changes"
+
+#kubelet monitoring rules
+  - name: kubelet scrape target monitoring
+    rules:
+      - alert: KubeletScrapeTargetDown
+        expr: up{job="kubelet"} == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{$labels.node}}/{{$labels.pod}} scrape target is down"
+          description: "{{$labels.namespace}}/{{$labels.pod}} scrape target is down, metrics not available"
+
+  - name: kubelet has high runtime errors
+    rules:
+      - alert: KubeletHasHighRuntimeErrors
+        expr: sum by (instance, node) (rate(kubelet_runtime_operations_error_total[5m]))>1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "kubelet on {{$labels.node}} has high runtime errors"
+          description: "kubelet on {{$labels.node}} has high runtime errors"
+
+#PLEG or kubelet lifecycle slowness warning
+  - name: KubeletHasPLEGHighDuration
+    rules:
+      - alert: KubeletHasPLEGHighDuration
+        expr: histogram_quantile(0.99, sum by (instance, node, le) (rate(kubelet_pleg_relist_duration_seconds_bucket[5m])))>10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kubelet PLEG relist is slow on {{ $labels.node }}"
+          description: "99th percentile PLEG relist duration has exceeded 10 seconds on {{$labels.node}}"
+
+#kube-Scheduler monitoring rules
+  - name: kube scheduler scrape target is down
+    rules:
+      - alert: SchedulerScrapeTargetDown
+        expr: up{job="kube-scheduler"}==0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "kube-scheduler scrape target is down on {{$labels.node}}"
+          description: "kube-scheduler scrape target is down on {{$labels.node}}, metrics not available"
+
+  - name: kube-scheduler scheduling failures
+    rules:
+      - alert: Kube-SchedulerSchedulingFailures
+        expr: increase(scheduler_schedule_attempts_total{result="error"}[5m])>0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{$labels.node}} has scheduling errors"
+          description: "{{$labels.node}} has scheduling errors"
+
+  - name: Kube-scheduler unschedulable pods
+    rules:
+      - alert: KubeSchedulerUnschedulablePods
+        expr: scheduler_pending_pods{queue="unschedulable"} > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pods are unschedulable"
+          description: "The scheduler has pods in the unschedulable queue for more than 10 minutes."
+
+###kube-controller manager monitoring rules
+  - name: kube-controller scrape target is down
+    rules:
+      - alert: Kube-controllerScrapeTargetDown
+        expr: up{job="kube-controller-manager"}==0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "kube-controller is down on {{$labels.instance}}"
+          description: "kube-controller is down on {{$labels.instance}}, metrics not available"
+
+  - name: kube-controller manager has high work queue backlog or retries
+    rules:
+      - alert: KubecontrollerManagerWorkBacklogOrHighRetries
+        expr: |
+          max by (name) (workqueue_depth{job="kube-controller-manager"})>100
+          or
+          max by (name) (workqueue_unfinished_work_seconds{job="kube-controller-manager"})>300
+        for: 5m 
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{$labels.node}} kube-controller manager has high work queue backlog or retries"
+          description: "{{$labels.node}} kube-controller manager has high work queue backlog or retries"
