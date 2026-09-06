@@ -8,6 +8,7 @@ groups:
        labels:
         severity: warning
         team: finance
+        owner: jack daniels
        annotations:
         summary: Pod {{$labels.namespace}}/{{$labels.pod}} struck in pending status
         description: Pod {{$labels.namespace}}/{{$labels.pod}} struck in pending status
@@ -50,7 +51,7 @@ groups:
   - name: crashloopbackoff monitoring
     rules:
       - alert: CrashLoopBackOff
-        expr: kube_pod_container_status_waiting_reason{namespace="kube-system",reason="CrashLoopBackOff"} == 1        
+        expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} == 1
         for: 10m
         labels:
           severity: warning
@@ -62,7 +63,7 @@ groups:
   - name: container restarts
     rules:
     - alert: ContainerRestarts
-      expr: increase(kube_pod_container_restart_count[5m]) > 0
+      expr: increase(kube_pod_container_restart_count[15m]) >= 3
       labels:
         severity: warning
       annotations:
@@ -72,7 +73,7 @@ groups:
   - name: replica monitoring
     rules:
     - alert: ReplicaCountNotMet
-      expr: kube_deployment_status_replicas_available{deployment="frontend", deployment="backend"} < kube_deployment_spec_replicas{replicaset="frontend-rs", replicaset="backend-rs"}
+      expr: kube_deployment_status_replicas_available{namespace="tic-tac-toe"}<kube_deployment_spec_replicas{namespace="tic-tac-toe"}
       for: 5m
       labels:
         severity: critical
@@ -87,7 +88,7 @@ groups:
   - name: Kube apiserver uptime monitoring
     rules: 
     - alert: KubeApiServerUpMonitoring
-      expr: up{component="kube-apiserver"} == 1
+      expr: up{component="kube-apiserver"} == 0
       for: 10s
       labels:
         severity: critical
@@ -110,13 +111,13 @@ groups:
   - name: kube-api server having high latency
     rules: 
       - alert: kubeApiserverHighLatency
-        expr: histogram_quantile(0.95, sum by(le)(rate (api_server_request_duration_seconds_bucket[5m])))>1
+        expr: histogram_quantile(0.95, sum by(le)(rate (apiserver_request_duration_seconds_bucket[5m])))>1
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: kube-apiserver has high latency
-          description: kube-apiserver has high latency
+          summary: "kube-apiserver has high latency"
+          description: "kube-apiserver has high latency"
 
 ######################################################
 # etcd monitoring rules
@@ -146,7 +147,7 @@ groups:
   - name: etcd database storage high
     rules:
      - alert: EtcdDatabaseStorageHigh
-       expr: (etcd_mvcc_db_total_size_in_bytes/etcd_server_backed_bytes) >= 0.80
+       expr: (etcd_mvcc_db_total_size_in_bytes/etcd_server_quota_backend_bytes) >= 0.80
        labels:
         severity: critical
        annotations:
@@ -156,7 +157,7 @@ groups:
   - name: etcd has frequent leader changes
     rules:
       - alert: EtcdLeaderChangeFrequent
-        expr: rate(etcd_server_leader_changes_seen_total[15m])>3
+        expr: increase(etcd_server_leader_changes_seen_total[15m])>3
         for: 5m
         labels:
           severity: warning
@@ -196,8 +197,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Kubelet PLEG relist is slow on {{ $labels.node }}"
-          description: "99th percentile PLEG relist duration has exceeded 10 seconds on {{$labels.node}}"
+          summary: "Kubelet PLEG relist is slow"
+          description: "99th percentile PLEG relist duration has exceeded 10 seconds"
 
 #kube-Scheduler monitoring rules
   - name: kube scheduler scrape target is down
